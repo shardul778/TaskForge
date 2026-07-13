@@ -1,63 +1,88 @@
-# TaskForge API
+# TaskForge
 
-Full-stack task and project management app with a FastAPI backend and React frontend.
+A full-stack task and project management app with JWT authentication, 
+built to practice real-world backend architecture — auth, protected 
+routes, and relational data modeling between users, projects, and tasks.
 
-## Project structure
+**Live:** https://task-forge-tech.vercel.app  
+**API Docs:** https://taskforge-7mfj.onrender.com/docs
 
-```
+## What it does
+
+Users register, log in, and manage their own projects and tasks. 
+Each project can hold multiple tasks. All data is scoped per user — 
+you only ever see your own projects and tasks, enforced at the API level 
+via JWT.
+
+## Features
+
+- JWT-based authentication (register, login, protected routes)
+- Full CRUD on projects and tasks
+- User-scoped data isolation
+- Interactive Swagger docs for the entire API
+- Deployed frontend (Vercel) + backend (Render)
+
+## Tech Stack
+
+**Frontend:** React, Vite  
+**Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic  
+**Auth:** JWT, Passlib (password hashing)  
+**Deployment:** Vercel (frontend), Render (backend)
+
+## Project Structure
+
 TaskForge_API/
-├── app/                 # FastAPI backend
-│   ├── routers/         # API route handlers
-│   ├── auth.py          # JWT auth helpers
-│   ├── config.py        # Environment configuration
-│   ├── database.py      # SQLAlchemy setup
-│   ├── main.py          # Application entry point
-│   ├── models.py        # Database models
-│   └── schemas.py       # Pydantic schemas
-├── frontend/            # React + Vite frontend
-├── requirements.txt     # Python dependencies
-```
+├── app/
+│   ├── routers/        # users, projects, tasks route handlers
+│   ├── auth.py          # JWT logic, password hashing
+│   ├── database.py       # DB session + engine setup
+│   ├── models.py         # SQLAlchemy models
+│   └── schemas.py        # Pydantic request/response models
+├── frontend/
+└── requirements.txt
 
-## Setup
+## Running Locally
 
-### Backend
-
+**Backend**
 ```bash
 python -m venv venv
-venv\Scripts\activate        # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env       # then edit SECRET_KEY
+cp .env.example .env
 uvicorn app.main:app --reload
 ```
+Runs at `http://127.0.0.1:8000` — docs at `/docs`
 
-API runs at `http://127.0.0.1:8000`.
-
-### Frontend (development)
-
+**Frontend**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Runs at `http://localhost:5173`
 
-Frontend runs at `http://127.0.0.1:5173` and proxies API requests to the backend.
+## Environment Variables
 
-### Production build
-
-```bash
-cd frontend
-npm run build
+```env
+DATABASE_URL=sqlite:///./taskforge.db
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
-Then start the API — it serves the built app from `frontend/dist` when present.
+## API Endpoints
 
-## Environment variables
+**Auth:** `POST /register` · `POST /login` · `GET /me`  
+**Projects:** `GET/POST /projects` · `GET/PUT/DELETE /projects/{id}`  
+**Tasks:** `GET/POST /projects/{id}/tasks` · `GET/PUT/DELETE /projects/{id}/tasks/{task_id}`
 
-Copy `.env.example` to `.env` in the project root:
+## Next Steps
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | SQLAlchemy database URL |
-| `SECRET_KEY` | JWT signing secret (use a strong value in production) |
-| `ALGORITHM` | JWT algorithm (default: HS256) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token expiry in minutes |
+- Move from SQLite to PostgreSQL for production
+- Add task filtering and search
+- Password reset flow
+
+## Author
+
+Shardul Kadam  
+[LinkedIn] www.linkedin.com/in/shardul-kadam-924a75349 · [GitHub]github.com/shardul778
