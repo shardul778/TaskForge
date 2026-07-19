@@ -39,15 +39,8 @@ parent project and marked completed/incomplete
 **Validation:** Pydantic
 
 ## Project Structure
-TaskForge/
-├── app/
-│   ├── routers/        # projects, tasks, auth route handlers
-│   ├── auth.py          # JWT logic, password hashing
-│   ├── redis.py          # Redis connection, caching, blacklist, rate limit
-│   ├── database.py       # DB session + engine setup
-│   ├── models.py         # SQLAlchemy models
-│   └── schemas.py        # Pydantic request/response models
-├── requirements.txt
+<img width="611" height="305" alt="image" src="https://github.com/user-attachments/assets/e170ae81-3a5e-48c9-85ff-94a1e058246d" />
+
 
 ## Running Locally
 
