@@ -1,50 +1,59 @@
 # TaskForge
 
-A full-stack task and project management app with JWT authentication, 
-built to practice real-world backend architecture — auth, protected 
-routes, and relational data modeling between users, projects, and tasks.
+A RESTful task and project management API built with FastAPI, featuring 
+JWT authentication and Redis-backed performance and security layers — 
+token blacklisting, response caching, and login rate limiting.
 
 **Live:** https://task-forge-tech.vercel.app  
 **API Docs:** https://taskforge-7mfj.onrender.com/docs
 
-## What it does
+## Overview
 
-Users register, log in, and manage their own projects and tasks. 
-Each project can hold multiple tasks. All data is scoped per user — 
-you only ever see your own projects and tasks, enforced at the API level 
-via JWT.
+Users register, log in, and manage projects containing tasks — all data 
+scoped per user via JWT. On top of standard CRUD, this project adds three 
+production-style Redis integrations: blacklisting tokens on logout so they 
+can't be reused, caching frequently-requested project/task data, and 
+rate-limiting login attempts to prevent brute-force attacks.
 
 ## Features
 
-- JWT-based authentication (register, login, protected routes)
-- Full CRUD on projects and tasks
-- User-scoped data isolation
-- Interactive Swagger docs for the entire API
-- Deployed frontend (Vercel) + backend (Render)
+**Authentication** — JWT-based auth, registration, login, logout, 
+password hashing (bcrypt), protected routes
+
+**Projects & Tasks** — Full CRUD on both, with tasks scoped to their 
+parent project and marked completed/incomplete
+
+**Redis Layer**
+- *Token blacklisting* — logout adds the JWT to Redis, so it's rejected 
+  on any further use even before it naturally expires
+- *Response caching* — project and task list responses are cached with 
+  automatic expiration, and invalidated on any create/update/delete
+- *Login rate limiting* — tracks failed login attempts per IP and 
+  temporarily blocks further attempts after the threshold is hit
 
 ## Tech Stack
 
-**Frontend:** React, Vite  
-**Backend:** FastAPI, SQLAlchemy, SQLite, Pydantic  
-**Auth:** JWT, Passlib (password hashing)  
-**Deployment:** Vercel (frontend), Render (backend)
+**Backend:** FastAPI, SQLAlchemy, SQLite  
+**Auth:** JWT, Passlib (bcrypt)  
+**Caching/Security:** Redis  
+**Validation:** Pydantic
 
 ## Project Structure
-
-TaskForge_API/
+TaskForge/
 ├── app/
-│   ├── routers/        # users, projects, tasks route handlers
+│   ├── routers/        # projects, tasks, auth route handlers
 │   ├── auth.py          # JWT logic, password hashing
+│   ├── redis.py          # Redis connection, caching, blacklist, rate limit
 │   ├── database.py       # DB session + engine setup
 │   ├── models.py         # SQLAlchemy models
 │   └── schemas.py        # Pydantic request/response models
-├── frontend/
-└── requirements.txt
+├── requirements.txt
 
 ## Running Locally
 
-**Backend**
 ```bash
+git clone <repo-url>
+cd TaskForge
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -53,36 +62,30 @@ uvicorn app.main:app --reload
 ```
 Runs at `http://127.0.0.1:8000` — docs at `/docs`
 
-**Frontend**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Runs at `http://localhost:5173`
-
 ## Environment Variables
 
 ```env
-DATABASE_URL=sqlite:///./taskforge.db
 SECRET_KEY=your_secret_key
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=your_password
 ```
 
 ## API Endpoints
 
-**Auth:** `POST /register` · `POST /login` · `GET /me`  
+**Auth:** `POST /register` · `POST /login` · `POST /logout` · `GET /me`  
 **Projects:** `GET/POST /projects` · `GET/PUT/DELETE /projects/{id}`  
 **Tasks:** `GET/POST /projects/{id}/tasks` · `GET/PUT/DELETE /projects/{id}/tasks/{task_id}`
 
 ## Next Steps
 
 - Move from SQLite to PostgreSQL for production
-- Add task filtering and search
-- Password reset flow
+- Containerize with Docker + docker-compose (app, DB, Redis)
+- Add CI/CD via GitHub Actions
 
 ## Author
 
 Shardul Kadam  
-[LinkedIn] www.linkedin.com/in/shardul-kadam-924a75349 · [GitHub]github.com/shardul778
+[LinkedIn](www.linkedin.com/in/shardul-kadam-924a75349) · [GitHub](https://github.com/shardul778)
