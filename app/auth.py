@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from redis import r
 
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 
@@ -31,7 +32,7 @@ def create_token(data:dict):
 
     return token
 
-#verify token
+#verify token and use redis
 def verify_token(token:str = Depends(oauth2_schema)):
     try:
         payload = jwt.decode(token,SECRET_KEY,algorithms = [ALGORITHM])
@@ -42,12 +43,21 @@ def verify_token(token:str = Depends(oauth2_schema)):
                 status_code=401,
                 detail = "Invalid token"
             )
+        
+        check_user =  r.get(token)
+        if check_user == "blacklisted":
+            raise HTTPException(
+            status_code=401,
+            detail="Token has been blacklisted"
+        )
         return username
     except JWTError:
         raise HTTPException(
                 status_code=401,
                 detail = "Invalid token"
         )
+    
+
     
 
 

@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from ..models import Projects,User,Tasks
 from ..auth import verify_token
 from sqlalchemy import and_
+from ..redis import r
+import json
 
 router = APIRouter()
 
@@ -40,10 +42,12 @@ def create_task(task:TaskCreate,project_id:int, db:Session = Depends(get_db),use
             status_code=400,
             detail="Task already exists"
         )
+    cache_key = f"tasks_{current_user.id}_{project_id}"
 
     db.add(task_created)
     db.commit()
     db.refresh(task_created)
+    r.delete(cache_key)
 
     return{
         "project":"Task created",
@@ -77,10 +81,30 @@ def get_tasks(project_id:int,db:Session = Depends(get_db),user = Depends(verify_
             detail="Project is not yours"
         )
     
-    get_tasks = db.query(Tasks).filter(and_(Tasks.owner_id==current_user.id,Tasks.project_id==project_id)).all()
+    cache_key = f"tasks_{current_user.id}_{project_id}"
+    info = r.get(cache_key)
+    if info is not None:
+        task_data = json.loads(info)
+    else:
+        get_tasks = db.query(Tasks).filter(and_(Tasks.owner_id==current_user.id,Tasks.project_id==project_id)).all()
+        task_data = [
+    {
+        "id": task.id,
+        "title" : task.title,
+        "completed": task.completed,
+        "description": task.description,
+        "projectid": task.project_id,
+        "priority":task.priority,
+        "owner_id": task.owner_id
+    }
+    for task in get_tasks
+]
+
+        data = json.dumps(task_data)
+        r.setex(cache_key,300,data)
 
     return{
-        "project":get_tasks 
+        "task":task_data 
          }
 
 #get specific task
@@ -93,8 +117,43 @@ def get_task(task_id:int,project_id:int, db:Session = Depends(get_db),user = Dep
             status_code=400,
             detail="User not found"
         )
-    get_task = db.query(Tasks).filter(Tasks.id == task_id).first()
-    if  get_task:
+    
+    if not get_task:
+        raise HTTPException(
+        status_code=404,
+        detail="Task not found"
+    )
+    
+    cache_key = f"task_{current_user.id}_{project_id}_{task_id}"
+    info = r.get(cache_key)
+    if info is not None:
+        task_data = json.loads(info)
+    else:
+        get_tasks = db.query(Tasks).filter(
+    and_(
+        Tasks.id == task_id,
+        Tasks.project_id == project_id,
+        Tasks.owner_id == current_user.id
+    )
+).first()
+        task_data = {
+    
+        "id": get_tasks.id,
+        "title" : get_tasks.title,
+        "completed": get_tasks.completed,
+        "description": get_tasks.description,
+        "projectid": get_tasks.project_id,
+        "priority":get_tasks.priority,
+        "owner_id": get_tasks.owner_id
+    }
+    
+
+
+        data = json.dumps(task_data)
+        r.setex(cache_key,300,data)
+
+
+    if  task_data:
         verify_user = db.query(Tasks).filter(and_(Tasks.project_id==project_id,Tasks.owner_id==current_user.id)).first()
         if not verify_user:
             raise HTTPException(
@@ -108,7 +167,7 @@ def get_task(task_id:int,project_id:int, db:Session = Depends(get_db),user = Dep
         )
 
     return{
-        "project":get_task 
+        "task":task_data 
          }
 
 
@@ -142,9 +201,11 @@ def update_task(project_id:int,task_id:int ,title:str,priority:str, description:
     current_task.priority = priority
     current_task.completed = False
 
+    cache_key = f"task_{current_user.id}_{project_id}_{task_id}"
     
     db.commit()
     db.refresh(current_task)
+    r.delete(cache_key)
 
     return{
         "project":"Task update",
@@ -177,8 +238,11 @@ def delete_task(project_id:int,task_id:int ,  db:Session = Depends(get_db),user 
             detail="Task not found"
         )
     
+    cache_key = f"task_{current_user.id}_{project_id}_{task_id}"
+
     db.delete(current_task)    
     db.commit()
+    r.delete(cache_key)
 
     return{
         "project":"Task deleted",
