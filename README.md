@@ -81,4 +81,4 @@ REDIS_PASSWORD=your_password
 ## Author
 
 Shardul Kadam  
-[LinkedIn](www.linkedin.com/in/shardul-kadam-924a75349) · [GitHub](https://github.com/shardul778)
+[LinkedIn](https://www.linkedin.com/in/shardul-kadam-924a75349) · [GitHub](https://github.com/shardul778)
